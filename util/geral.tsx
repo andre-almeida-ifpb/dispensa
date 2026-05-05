@@ -1,4 +1,6 @@
-export function nextIdSection(lista) {
+import { ISecao } from "@/contextos/ContextoDispensa";
+
+export function nextIdSection(lista: ISecao[]) {
     if (lista.length > 0) {    
         return Math.max(...lista.map( item => item.id )) + 1;
     } else {
@@ -7,7 +9,7 @@ export function nextIdSection(lista) {
 }
 
 
-export function nextIdData(lista) {    
+export function nextIdItem(lista: ISecao[]) {    
     if (lista.length > 0) {    
         return Math.max(...lista.map( section => section.data.map( item => item.id )).flat()) + 1;
     } else {

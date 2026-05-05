@@ -1,6 +1,6 @@
 
-import dispensa from "@/dados/dispensa";
-import { nextIdData } from "@/util/geral";
+import { IItemDispensa, ISecao, useDispensa } from "@/contextos/ContextoDispensa";
+import { nextIdItem } from "@/util/geral";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from "react";
@@ -8,13 +8,14 @@ import { Button, Modal, Pressable, SectionList, StyleSheet, Text, TextInput, Vie
 
 export default () => {
 
-  const [disp, setDisp] = useState(dispensa);
-  const [modalSectionVisible, setModalSectionVisible] = useState(false);
-  const [modalItemVisible, setModalItemVisible] = useState(false);
-  const [sectionName, setSectionName] = useState("");
-  const [itemName, setItemName] = useState("");
-  const [sectionId, setSectionId] = useState(undefined);
-  const [itemId, setItemId] = useState(undefined);
+  const { dispensa, dispatch } = useDispensa();
+
+  const [modalSectionVisible, setModalSectionVisible] = useState<boolean>(false);
+  const [modalItemVisible, setModalItemVisible] = useState<boolean>(false);
+  const [sectionName, setSectionName] = useState<string>("");
+  const [itemName, setItemName] = useState<string>("");
+  const [sectionId, setSectionId] = useState<number | undefined>(undefined);
+  const [itemId, setItemId] = useState<number | undefined>(undefined);
 
   function addItem() {
 
@@ -23,65 +24,56 @@ export default () => {
       return;
     }
 
-    let nome = itemName.trim();
+    let nome: string = itemName.trim();
 
     if (nome.length > 0) {
       
-      const newItem = {
-        id: nextIdData(disp),
-        name: nome,
-        quantity: 0
+      const newItem: IItemDispensa = {
+        id: nextIdItem(dispensa),
+        nome: nome,
+        qtdDispensa: 0,
+        qtdLista: 0
       }
 
-      setDisp( disp.map( (section) => {
-        if (section.id != sectionId) {
-          return section;
-        } else {
-          return (
-            {
-              id: section.id,
-              name: section.name,
-              data: [ ...section.data, newItem ]
-            }
-          );
-        }
-      }));
+      dispatch({ type: 'ADICIONAR_ITEM', payload: { secaoId: sectionId, item: newItem } });
 
+      setSectionId(undefined);
       setItemName("");
       setModalItemVisible(false);
     }
   }
 
-  function updateItem(item) {
+  function updateItem(item: IItemDispensa) {
     setItemId(item.id);
-    setItemName(item.name);
+    setItemName(item.nome);
     setModalItemVisible(true);
   }
 
   function finishUpdateItem() {
-    let nome = itemName.trim();
+    let nome: string = itemName.trim();
 
     if (itemName.length > 0) {
       
-      setDisp( disp.map( (section) => {
-        return {
-          id: section.id,
-          name: section.name,
-          data: section.data.map( item => {
-            if (item.id == itemId) {
-              return {
-                id: item.id,
-                name: itemName,
-                quantity: item.quantity
-              }
-            } else {
-              return item;
-            }
-          })
-        }
+      // setDisp( disp.map( (section) => {
+      //   return {
+      //     id: section.id,
+      //     nome: section.nome,
+      //     data: section.data.map( item => {
+      //       if (item.id == itemId) {
+      //         return {
+      //           id: item.id,
+      //           nome: itemName,
+      //           qtdDispensa: item.qtdDispensa,
+      //           qtdLista: item.qtdLista
+      //         }
+      //       } else {
+      //         return item;
+      //       }
+      //     })
+      //   }
 
 
-      }));
+      // }));
 
       setItemId(undefined);
       setItemName("");
@@ -89,51 +81,22 @@ export default () => {
     }
   }
 
-  function removeItem(id){
-    setDisp( disp.map(section => {
-      return {
-        id: section.id,
-        name: section.name,
-        data: section.data.filter( item => item.id != id)
-      }
-    }));
+  function removeItem(id: number){
+
+    dispatch({ type: 'REMOVER_ITEM', payload: { itemId: id } });
   }
 
-  function incItem(id) {
+  function incItem(id: number) {
 
-    setDisp(disp.map(section => { 
-      return {
-        id: section.id, 
-        name: section.name,  
-        data:  section.data.map(it => {
-          return {
-            id: it.id,
-            name: it.name,
-            quantity: it.id == id ? it.quantity + 1 : it.quantity
-          };
-        })
-      };
-    }));
+    dispatch({ type: 'INCREMENTAR_QTD_DISPENSA', payload: { itemId: id } });
   }
 
-  function decItem(id) {
+  function decItem(id: number) {
 
-    setDisp(disp.map(section => { 
-      return {
-        id: section.id, 
-        name: section.name,  
-        data:  section.data.map(it => {
-          return {
-            id: it.id,
-            name: it.name,
-            quantity: it.id == id && it.quantity > 0 ? it.quantity - 1 : it.quantity
-          };
-        })
-      };
-    }));
+    dispatch({ type: 'DECREMENTAR_QTD_DISPENSA', payload: { itemId: id } });    
   }
 
-  function RenderItem({item}) {
+  function RenderItem({item}: {item: IItemDispensa}) {
 
     return (
       <View style={{ flexDirection: "row", backgroundColor: "#F0F0F0", padding: 10, alignItems: "center" }}>
@@ -147,12 +110,12 @@ export default () => {
         >
           <FontAwesome name="trash" size={16} color="black" style={{ marginHorizontal: 5 }}/>
         </Pressable>
-        <Text style={{ flex: 1 }}>{item.name}</Text>
+        <Text style={{ flex: 1 }}>{item.nome}</Text>
         <Button 
           title="-"
           onPress={ () => decItem(item.id) }
         />
-        <Text style={{ marginHorizontal: 5 }}>{item.quantity}</Text>
+        <Text style={{ marginHorizontal: 5 }}>{item.qtdDispensa}</Text>
         <Button 
           title="+"
           onPress={ () => incItem(item.id) }
@@ -161,10 +124,10 @@ export default () => {
     );
   }
 
-  function RenderSection({section}) {
+  function RenderSection({section}: {section: ISecao}) {
     return ( 
         <View style={{ flexDirection: "row", backgroundColor: "#81E9ED", padding: 10, alignItems: "center" }}>
-          <Text style={{ flex: 1,fontWeight: "bold", textAlign: "center" }}>{section.name}</Text>
+          <Text style={{ flex: 1,fontWeight: "bold", textAlign: "center" }}>{section.nome}</Text>
           <Button 
             title="+"
             onPress={ () => {setModalItemVisible(true); setSectionId(section.id)} }
@@ -178,7 +141,7 @@ export default () => {
       style={{ flex: 1}}
     >
       <SectionList
-        sections={disp}
+        sections={dispensa}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <RenderItem item={item}/> }
         renderSectionHeader={({ section }) => <RenderSection section={section}/>}
