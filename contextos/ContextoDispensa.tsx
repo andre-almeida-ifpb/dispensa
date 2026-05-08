@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useContext, useEffect, useReducer, useState } from 'react';
 import dispensa from '../dados/dispensa';
 
 export interface IItemDispensa {
@@ -34,6 +35,13 @@ const ContextoDispensa = createContext<IContextoDispensa | undefined>(undefined)
 const reducer = (state: IContextoDispensa, action: IAction) => {
 
     switch (action.type) {
+        
+        case 'RESTORE_STATE':
+            return {
+                ...state,
+                ...(action.payload || {}),
+            }
+
         case 'ADICIONAR_SECAO':
             return {
                 ...state,
@@ -143,6 +151,42 @@ const reducer = (state: IContextoDispensa, action: IAction) => {
 export const DispensaProvider = ({ children }: { children?: React.ReactNode }) => {
 
     const [state, dispatch] = useReducer(reducer, estadoInicial);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // Carrega os dados na montagem
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const savedData = await AsyncStorage.getItem('@state');
+                dispatch({ 
+                    type: 'RESTORE_STATE', 
+                    payload: savedData ? JSON.parse(savedData) : null 
+                });                
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            } 
+        };
+        
+        loadData();
+    }, []);
+
+    // Salva os dados sempre que o estado mudar
+    useEffect(() => {
+        if (isLoading) return; 
+
+        const saveData = async () => {
+            try {
+                const stateToSave = {...state};
+                await AsyncStorage.setItem('@state', JSON.stringify(stateToSave));
+            } catch (error) {   
+                console.error('Erro ao salvar dados:', error);
+            }
+        };
+
+        saveData();
+    }, [state]);
+
     return (
         <ContextoDispensa.Provider value={{ dispensa: state.dispensa, dispatch }}>
             {children}
