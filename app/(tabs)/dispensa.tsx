@@ -32,7 +32,8 @@ export default () => {
         id: nextIdItem(dispensa),
         nome: nome,
         qtdDispensa: 0,
-        qtdLista: 0
+        qtdLista: 0,
+        comprado: false
       }
 
       dispatch({ type: 'ADICIONAR_ITEM', payload: { secaoId: sectionId, item: newItem } });

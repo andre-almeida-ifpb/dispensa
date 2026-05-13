@@ -7,6 +7,7 @@ export interface IItemDispensa {
     nome: string;
     qtdDispensa: number;
     qtdLista: number;
+    comprado: boolean;
 }
 
 export interface ISecao {
@@ -136,6 +137,22 @@ const reducer = (state: IContextoDispensa, action: IAction) => {
                         data: section.data.map(item => {
                             if (item.id === action.payload.itemId) {
                                 return { ...item, qtdLista: item.qtdLista - 1};
+                            }
+                            return item;
+                        })
+                    };
+                })
+            }
+            
+        case 'INVERTER_COMPRADO':
+            return {
+                ...state,
+                dispensa: state.dispensa.map(section => {
+                    return {
+                        ...section,
+                        data: section.data.map(item => {
+                            if (item.id === action.payload.itemId) {
+                                return { ...item, comprado: !item.comprado};
                             }
                             return item;
                         })
